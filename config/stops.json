@@ -1,0 +1,5 @@
+{
+  "api_base": "https://<real_tristar_api>",
+  "01": 12345,
+  "02": 67890
+}
