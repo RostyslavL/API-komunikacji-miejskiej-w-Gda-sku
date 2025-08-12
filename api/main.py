@@ -1,3 +1,7 @@
 
+from fastapi import FastAPI
+app = FastAPI()
 
-# main api
+@app.get("/ping")
+def ping_api():
+    return {"message": "API is working"}
