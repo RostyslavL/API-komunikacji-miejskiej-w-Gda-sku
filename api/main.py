@@ -32,15 +32,19 @@ async def get_stops():
 async def departures(
     stop_name: str = Query(
         ..., description="Substring of stop name, e.g. 'Brama Wyżynna'"
+    ),
+    routeId: str | None = Query(
+        None, description="Optional route ID to filter departures, e.g. '3'"
     )
 ):
-    departures = await ztm.get_departures_for_stop_name(stop_name)
+    departures = await ztm.get_departures_for_stop_name(stop_name, routeId)
     if not departures:
         raise HTTPException(
             status_code=404,
-            detail=f"No departures found for stops matching '{stop_name}'",
+            detail=f"No departures found for stops matching '{stop_name}'"
+            + (f" and route '{routeId}'" if routeId else ""),
         )
-    return {"stopName": stop_name, "departures": departures}
+    return {"stopName": stop_name, "routeId": routeId, "departures": departures}
 
 
 

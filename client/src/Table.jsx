@@ -1,35 +1,37 @@
-import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import moment from "moment";
 
-const API_URL = 'http://127.0.0.1:8000'
+const API_URL = 'http://127.0.0.1:8000';
 
 const Table = () => {
-    const [stopName, setStopName] = useState('Brama Wyżynna')
+    const [stopName, setStopName] = useState('Brama Wyżynna');
+    const [lineNumber, setLineNumber] = useState('');
 
-    const fetchDepartues = async () => {
-        const response = await fetch(`${API_URL}/departures?stop_name=${encodeURIComponent(stopName)}`)
+    const fetchDepartures = async () => {
+        let url = `${API_URL}/departures?stop_name=${encodeURIComponent(stopName)}${lineNumber ? `&routeId=${encodeURIComponent(lineNumber)}` : ''}`;
+        const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error('Network response was not ok')
+            throw new Error('Network response was not ok');
         }
-        return response.json()
-    }
+        return response.json();
+    };
 
     const { data, isLoading, error } = useQuery({
-        queryKey: ['departues', stopName],
-        queryFn: fetchDepartues,
-    })
+        queryKey: ['departures', stopName, lineNumber],
+        queryFn: fetchDepartures,
+    });
 
     const exportToJson = () => {
-        if (!data) return
+        if (!data) return;
 
-        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`
-        const link = document.createElement('a')
-        link.href = jsonString
-        link.download = `${stopName.replace(/\s+/g, '_')}_departures.json`
-        link.click()
-    }
+        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+        const link = document.createElement('a');
+        link.href = jsonString;
+        link.download = `${stopName.replace(/\s+/g, '_')}${lineNumber ? `_route_${lineNumber}` : ''}_departures.json`;
+        link.click();
+    };
 
     return (
         <div className="p-4">
@@ -47,31 +49,57 @@ const Table = () => {
                             <path d="m21 21-4.3-4.3"></path>
                         </g>
                     </svg>
-                    <input type="search" className="grow" placeholder="Enter stop name"
+                    <input
+                        type="search"
+                        className="grow"
+                        placeholder="Enter stop name"
                         value={stopName}
-                        onChange={(e) => setStopName(e.target.value)} />
+                        onChange={(e) => setStopName(e.target.value)}
+                    />
                     <kbd className="kbd kbd-sm">⌘</kbd>
                     <kbd className="kbd kbd-sm">K</kbd>
                 </label>
-
+                <label className="input">
+                    <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <g
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            strokeWidth="2.5"
+                            fill="none"
+                            stroke="currentColor"
+                        >
+                        </g>
+                    </svg>
+                    <input
+                        type="text"
+                        className="grow"
+                        placeholder="Provide Line Number"
+                        value={lineNumber}
+                        onChange={(e) => setLineNumber(e.target.value)}
+                    />
+                </label>
                 <button onClick={exportToJson} className="btn btn-primary" disabled={!data}>
                     Export to JSON
                 </button>
             </div>
 
-            {isLoading && <div className="loading loading-spinner loading-lg">
-                <span className="loading loading-spinner loading-xl"></span>
-            </div>}
+            {isLoading && (
+                <div className="loading loading-spinner loading-lg">
+                    <span className="loading loading-spinner loading-xl"></span>
+                </div>
+            )}
             {error && (
-                <div class="chat chat-end">
-                    <div class="chat-bubble chat-bubble-error">
-                        <div className="text-red-600">Error: {(error).message}</div>
+                <div className="chat chat-end">
+                    <div className="chat-bubble chat-bubble-error">
+                        <div className="text-red-600">Error: {error.message}</div>
                     </div>
                 </div>
             )}
             {data && (
                 <>
-                    <h2 className="mb-2 font-bold text-lg">Departures for: {data.stopName}</h2>
+                    <h2 className="mb-2 font-bold text-lg">
+                        Departures for: {data.stopName}{data.routeId ? ` (Route ${data.routeId})` : ''}
+                    </h2>
                     <div className="overflow-x-auto">
                         <table className="table w-full table-zebra">
                             <thead>
@@ -107,7 +135,7 @@ const Table = () => {
                 </>
             )}
         </div>
-    )
-}
+    );
+};
 
-export default Table
+export default Table;

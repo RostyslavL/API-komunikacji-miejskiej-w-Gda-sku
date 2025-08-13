@@ -10,9 +10,7 @@ ZTM_STOPS_URL = "https://ckan.multimediagdansk.pl/dataset/c24aa637-3619-4dc2-a17
 WARSAW_TIMEZONE = pytz.timezone("Europe/Warsaw")
 ZTM_TIME_URL = "https://ckan2.multimediagdansk.pl/departures?stopId="
 
-
 async def fetch_displays() -> Tuple[Dict, List[Dict]]:
-
     async with httpx.AsyncClient() as client:
         response = await client.get(ZTM_DISPLAYS_URL)
         if response.status_code == 404:
@@ -20,16 +18,12 @@ async def fetch_displays() -> Tuple[Dict, List[Dict]]:
         response.raise_for_status()
         data = response.json()
 
-
         if isinstance(data, list):
-
             displays = data
         elif isinstance(data, dict):
-
             displays = data.get("displays", [])
             if not displays:
                 displays = data.get("data", [])
-
             if not displays and "name" in data:
                 displays = [data]
         else:
@@ -39,7 +33,6 @@ async def fetch_displays() -> Tuple[Dict, List[Dict]]:
         print(
             f'displays type: {type(displays)}, length: {len(displays) if isinstance(displays, list) else "not a list"}')
         return data, displays
-
 
 async def fetch_stops() -> Tuple[Dict, List[Dict]]:
     async with httpx.AsyncClient() as client:
@@ -52,7 +45,6 @@ async def fetch_stops() -> Tuple[Dict, List[Dict]]:
         print(f'fetch_stops data keys: {data.keys() if isinstance(data, dict) else type(data)}')
         return data, stops
 
-
 def convert_utc_to_warsaw(utc_str: str) -> Union[str, None]:
     if not utc_str:
         return None
@@ -64,8 +56,7 @@ def convert_utc_to_warsaw(utc_str: str) -> Union[str, None]:
         print(f"Error converting time '{utc_str}': {e}")
         return None
 
-
-async def get_departures_for_stop_name(stop_name: str) -> List[Dict]:
+async def get_departures_for_stop_name(stop_name: str, routeId: str | None = None) -> List[Dict]:
     data, displays = await fetch_displays()
 
     if not displays:
@@ -129,6 +120,15 @@ async def get_departures_for_stop_name(stop_name: str) -> List[Dict]:
             for dep in departures:
                 dep["estimatedLocalTime"] = convert_utc_to_warsaw(dep.get("estimatedTime"))
                 dep["stopId"] = stop_id
+
+
+            if routeId:
+                routeId_lower = routeId.lower()
+                departures = [
+                    dep for dep in departures
+                    if (dep.get("routeId") and str(dep["routeId"]).lower() == routeId_lower) or
+                       (dep.get("routeShortName") and str(dep["routeShortName"]).lower() == routeId_lower)
+                ]
 
             combined_departures.extend(departures)
             print(f"Added {len(departures)} departures for stop {stop_id}")
